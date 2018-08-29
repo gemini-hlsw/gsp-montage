@@ -1,6 +1,8 @@
 **mosaic-server** - Mosaic image server based on Montage.
 
-This requies a local install of my Montage fork on the `mArchiveList-segfault` branch.
+This is a partial fix for the issue where 2MASS tiles overlap the FOV in a non-helpful way, as described in Gemini issue `REL-1093`.
+
+This requies a local install of my Montage fork on the `mArchiveList-segfault` branch. There was a [PR](https://github.com/Caltech-IPAC/Montage/pull/32) back to Montage that may have been merged by now, so check it before proceeding.
 
 It also requires a patched OT with the change on my Ocs fork on the `tpe-fixes` branch, and a hacked `ImageCatalog.scala` thus:
 
@@ -25,3 +27,6 @@ Next steps:
 - Add a tile cache.
 - Add a mosaic cache (is this necessary? assembling small mosaics is pretty fast)
 
+Deployment:
+
+- Unclear how to deploy this since it has a native component. Docker?
