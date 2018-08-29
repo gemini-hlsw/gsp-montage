@@ -1,8 +1,8 @@
 // Library versions all in one place, for convenience and sanity.
-lazy val http4sVersion        = "0.18.16"
-lazy val catsVersion          = "1.2.0"
-lazy val catsEffectVersion    = "0.10.1"
+lazy val attoVersion          = "0.6.3"
 lazy val kindProjectorVersion = "0.9.7"
+lazy val fs2CoreVersion       = "1.0.0-M4"
+lazy val jettyVersion         = "9.4.11.v20180605"
 
 // sbt-header requires these settings even though we're using a custom license header
 organizationName in ThisBuild := "Association of Universities for Research in Astronomy, Inc. (AURA)"
@@ -76,8 +76,8 @@ lazy val commonSettings = scalacSettings ++ Seq(
   licenses ++= Seq(("MIT", url("http://opensource.org/licenses/MIT"))),
 
   // These sbt-header settings can't be set in ThisBuild for some reason
-  headerMappings                          := headerMappings.value + (HeaderFileType.scala -> HeaderCommentStyle.cppStyleLineComment),
-  headerLicense                           := Some(HeaderLicense.Custom(
+  headerMappings := headerMappings.value + (HeaderFileType.scala -> HeaderCommentStyle.cppStyleLineComment),
+  headerLicense  := Some(HeaderLicense.Custom(
     """|Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
         |For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
         |""".stripMargin
@@ -96,16 +96,12 @@ lazy val core = project
   .in(file("modules/core"))
   .settings(commonSettings)
   .settings(
-    name := "mosaic-server-core",
+    name        := "mosaic-server-core",
     description := "Mosaic image server based on Montage.",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core"           % catsVersion,
-      "org.typelevel" %% "cats-free"           % catsVersion,
-      "org.typelevel" %% "cats-effect"         % catsEffectVersion,
-      "org.typelevel" %% "cats-testkit"        % catsVersion         % "test",
-      "org.http4s"    %% "http4s-dsl"          % http4sVersion,
-      "org.http4s"    %% "http4s-blaze-server" % http4sVersion,
-      "org.http4s"    %% "http4s-blaze-client" % http4sVersion,
+      "org.tpolecat"      %% "atto-core"    % attoVersion,
+      "co.fs2"            %% "fs2-core"     % fs2CoreVersion,
+      "org.eclipse.jetty" %  "jetty-server" % jettyVersion
     ),
     scalacOptions += "-Yno-predef"
   )
