@@ -9,26 +9,23 @@ import scala.sys.process._
 /** Algebra for shelling out to Montage programs. */
 trait Montage[F[_]] {
 
+  def mArchiveList(survey: String, band: String, objOrLoc: String, width: Double, height: Double, outfile: Path): F[Struct]
+
   def mHdr(objOrLoc: String, radius: Double, out: Path): F[Struct]
 
-  def mExec(out: Path, header: Path, band: Char, tempDir: Path): F[Struct]
+  def mExec(out: Path, header: Path, raw: Path, tempDir: Path): F[Struct]
 
 }
 
 object Montage {
 
-  /** Summon the instance for `F`. */
-  def apply[F[_]](implicit ev: Montage[F]): Montage[F] =
-    ev
-
-  /** Montage instance for any conforming `F`. */
-  implicit def instance[F[_]](
+  def apply[F[_]](log: Log[F])(
     implicit sf: Sync[F]
   ): Montage[F] =
     new Montage[F] {
       import sf._
 
-      def mHdr(objOrLoc: String, radius: Double, out: Path): F[Struct] =
+      def mHdr(objOrLoc: String, radius: Double, out: Path) =
         montage(
           "mHdr",
           objOrLoc,
@@ -36,14 +33,24 @@ object Montage {
           out.toString
         )
 
-      def mExec(out: Path, header: Path, band: Char, tempDir: Path): F[Struct] =
+      def mExec(out: Path, header: Path, raw: Path, tempDir: Path) =
         montage(
           "mExec",
-          "-c",
           "-o", out.toString,
           "-f", header.toString,
-          "2MASS", band.toString,
+          "-r", raw.toString,
           tempDir.toString
+        )
+
+      def mArchiveList(survey: String, band: String, objOrLoc: String, width: Double, height: Double, outfile: Path) =
+        montage(
+          "mArchiveList",
+          survey,
+          band,
+          objOrLoc,
+          width.toString,
+          height.toString,
+          outfile.toString
         )
 
       /**
@@ -60,12 +67,17 @@ object Montage {
 
       /** Exec a command with args, yielding the exit code and combined stdout/stderr output. */
       def exec(cmd: String, args: String*): F[(Int, String)] =
-        delay {
-          Console.println(s"*** EXEC $cmd ${args.mkString(" ")}")
-          val buf = ListBuffer[String]()
-          val exitCode = (cmd +: args).cat.run(ProcessLogger(buf.append(_))).exitValue
-          (exitCode, buf.mkString("\n"))
-        }
+        for {
+          _ <- log.info(s"$cmd ${args.mkString(" ")}")
+          s <- delay(unsafeExec(cmd, args: _*))
+          _ <- log.info(s.toString)
+        } yield s
+
+      private def unsafeExec(cmd: String, args: String*): (Int, String) = {
+        val buf = ListBuffer[String]()
+        val exitCode = (cmd +: args).cat.run(ProcessLogger(buf.append(_))).exitValue
+        (exitCode, buf.mkString("\n"))
+      }
 
     }
 

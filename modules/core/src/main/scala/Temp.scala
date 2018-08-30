@@ -13,6 +13,8 @@ trait Temp[F[_]] {
 
   def tempFile(prefix: String, suffix: String): Resource[F, Path]
 
+  def tempFileIn(path: Path, prefix: String, suffix: String): Resource[F, Path]
+
 }
 
 object Temp {
@@ -40,13 +42,18 @@ object Temp {
         }
       }
 
-      def tempDir(prefix: String): Resource[F, Path] =
+      def tempDir(prefix: String) =
         Resource.make(delay(Files.createTempDirectory(prefix))) { f =>
           delay(if (f.toFile.exists) Files.walkFileTree(f, DeletionVisitor)).void
         }
 
-      def tempFile(prefix: String, suffix: String): Resource[F, Path] =
+      def tempFile(prefix: String, suffix: String) =
         Resource.make(delay(Files.createTempFile(prefix, suffix))) { f =>
+          delay(if (f.toFile.exists) Files.delete(f))
+        }
+
+      def tempFileIn(path: Path, prefix: String, suffix: String) =
+        Resource.make(delay(Files.createTempFile(path, prefix, suffix))) { f =>
           delay(if (f.toFile.exists) Files.delete(f))
         }
 
