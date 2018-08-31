@@ -1,4 +1,4 @@
-package mosaic.server
+package mosaic.algebra
 
 import cats.effect._
 import cats.implicits._
@@ -9,24 +9,31 @@ import java.nio.file.attribute.BasicFileAttributes
 /** Algebra for creating temporary filesystem resources that will be deleted after use. */
 trait Temp[F[_]] {
 
+  /**
+   * Resource yielding a new temporary directory with the given prefix. The directory and its
+   * contents will be deleted after use.
+   */
   def tempDir(prefix: String): Resource[F, Path]
 
+  /**
+   * Resource yielding a new temporary file with the given prefix and suffix. The file will be
+   * deleted after use.
+   */
   def tempFile(prefix: String, suffix: String): Resource[F, Path]
 
-  def tempFileIn(path: Path, prefix: String, suffix: String): Resource[F, Path]
+  /**
+   * Resource yielding a new temporary file with the given prefix and suffix, created in the given
+   * directory. The file will be deleted after use.
+   */
+  def tempFileIn(dir: Path, prefix: String, suffix: String): Resource[F, Path]
 
 }
 
 object Temp {
 
-  /** Summon the instance for `F`. */
-  def apply[F[_]](implicit ev: Temp[F]): ev.type =
-    ev
-
   /** Temp instance for conforming `F`. */
-  implicit def instance[F[_]](implicit sf: Sync[F]): Temp[F] =
+  def apply[F[_]: Sync]: Temp[F] =
     new Temp[F] {
-      import sf._
 
       // Taken from the FileVisitor Javadoc
       private object DeletionVisitor extends SimpleFileVisitor[Path] {
@@ -43,18 +50,18 @@ object Temp {
       }
 
       def tempDir(prefix: String) =
-        Resource.make(delay(Files.createTempDirectory(prefix))) { f =>
-          delay(if (f.toFile.exists) Files.walkFileTree(f, DeletionVisitor)).void
+        Resource.make(Sync[F].delay(Files.createTempDirectory(prefix))) { f =>
+          Sync[F].delay(if (f.toFile.exists) Files.walkFileTree(f, DeletionVisitor)).void
         }
 
       def tempFile(prefix: String, suffix: String) =
-        Resource.make(delay(Files.createTempFile(prefix, suffix))) { f =>
-          delay(if (f.toFile.exists) Files.delete(f))
+        Resource.make(Sync[F].delay(Files.createTempFile(prefix, suffix))) { f =>
+          Sync[F].delay(if (f.toFile.exists) Files.delete(f))
         }
 
       def tempFileIn(path: Path, prefix: String, suffix: String) =
-        Resource.make(delay(Files.createTempFile(path, prefix, suffix))) { f =>
-          delay(if (f.toFile.exists) Files.delete(f))
+        Resource.make(Sync[F].delay(Files.createTempFile(path, prefix, suffix))) { f =>
+          Sync[F].delay(if (f.toFile.exists) Files.delete(f))
         }
 
     }

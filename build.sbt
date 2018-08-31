@@ -3,6 +3,7 @@ lazy val attoVersion          = "0.6.3"
 lazy val kindProjectorVersion = "0.9.7"
 lazy val fs2CoreVersion       = "1.0.0-M4"
 lazy val jettyVersion         = "9.4.11.v20180605"
+lazy val catsParVersion       = "0.2.0"
 
 // sbt-header requires these settings even though we're using a custom license header
 organizationName in ThisBuild := "Association of Universities for Research in Astronomy, Inc. (AURA)"
@@ -101,6 +102,7 @@ lazy val core = project
     libraryDependencies ++= Seq(
       "org.tpolecat"      %% "atto-core"    % attoVersion,
       "co.fs2"            %% "fs2-core"     % fs2CoreVersion,
+      "io.chrisdavenport" %% "cats-par"     % catsParVersion,
       "org.eclipse.jetty" %  "jetty-server" % jettyVersion
     ),
     scalacOptions += "-Yno-predef"

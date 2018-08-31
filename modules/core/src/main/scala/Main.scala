@@ -1,10 +1,11 @@
-package mosaic.server
+package mosaic
 
 import cats.effect._
 import cats.implicits._
 import java.nio.file._
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+import mosaic.algebra._
 import org.eclipse.jetty.server.Request
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.handler.AbstractHandler
@@ -13,49 +14,41 @@ import scala.Predef._
 
 object Main extends IOApp {
 
-  def streamResponse(path: Path, res: HttpServletResponse): IO[Long] =
-    for {
-      _ <- IO(res.setContentLength(path.toFile.length.toInt))
-      n <- IO(Files.copy(path, res.getOutputStream))
-    } yield n
+  /** Our cache lives here. */
+  val cacheRoot = Paths.get("/tmp", "mosaic-cache")
+
+  /** Our interpreter. Looks like a lot of work but there's only one way to construct it. */
+  def ioHttpMosaic(log: Log[IO]): HttpMosaic[IO] =
+    HttpMosaic(
+      Mosaic(
+        log,
+        MontageR(Montage(Exec(log)), Temp[IO]),
+        Fetch(log, Cache.urlCache(log, Temp[IO], cacheRoot), Temp[IO])
+      )
+    )
 
   def mosaic(objOrLoc: String, radius: Double, band: Char, req: HttpServletRequest, res: HttpServletResponse): IO[Unit] =
     for {
       log <- Log.newLog[IO]
+      mos  = ioHttpMosaic(log)
       _   <- log.info(s"""${req.getMethod} ${req.getRequestURL}${Option(req.getQueryString).foldMap("?" + _)}""")
-      _   <- IO(res.setContentType("application/fits"))
-      _   <- IO(res.setStatus(HttpServletResponse.SC_OK))
-      mo  =  Mosaic[IO](log, Montage(log), Cache(log, Paths.get("/tmp", "mosaic-cache")))
-      bs  <- mo.mosaic(objOrLoc, radius, band).use(streamResponse(_, res: HttpServletResponse))
+      bs  <- mos.respond(objOrLoc, radius, band, res)
       _   <- log.info(s"Done. Sent $bs bytes.")
     } yield ()
 
+  // Request handler for Jetty, kind of like a Servlet.
   object Handler extends AbstractHandler {
+    override def handle(target: String, baseReq: Request, req: HttpServletRequest, res: HttpServletResponse) = {
 
-    override def handle(
-      target: String,
-      baseRequest: Request,
-      request: HttpServletRequest,
-      response: HttpServletResponse
-    ) = {
+      // Decode the req and calculate an IO action to run.
+      val obj    = Option(req.getParameter("object"))
+      val radius = Option(req.getParameter("radius")).fold(0.25)(_.toDouble)
+      val band   = Option(req.getParameter("band")).map(_.head)
+      val action = (obj, band).mapN(mosaic(_, radius, _, req, res))
 
-      val obj    = Option(request.getParameter("object"))
-      val radius = Option(request.getParameter("radius")).fold(0.25)(_.toDouble)
-      val band   = Option(request.getParameter("band")).map(_.head)
-
-      val action = (obj, band).mapN { case (o, b) =>
-        mosaic(o, radius, b, request, response)
-      }
-
-      try {
-        action.foreach(_.unsafeRunSync) // todo: error handler
-        Console.println("----")
-      } catch {
-        case e: Exception =>
-          e.printStackTrace
-      }
+      // Run the action, if any, otherwise user gets a 404
+      action.foreach(_.unsafeRunSync)
     }
-
   }
 
   def run(args: List[String]): IO[ExitCode] =

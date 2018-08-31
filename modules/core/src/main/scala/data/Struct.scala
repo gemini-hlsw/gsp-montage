@@ -1,4 +1,4 @@
-package mosaic.server
+package mosaic.data
 
 import atto._, Atto._
 import scala.collection.immutable.Map
@@ -8,10 +8,6 @@ final case class Struct(toMap: Map[String, Either[Double, String]]) {
 
   def get(key: String): Option[Either[Double, String]] =
     toMap.get(key)
-
-  /** Returns true if the `"stat"` key exists and is mapped to the string value `"OK"`. */
-  def isOk: Boolean =
-    get("stat") == Some(Right("OK"))
 
 }
 
