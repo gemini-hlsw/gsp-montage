@@ -11,7 +11,7 @@ startYear        in ThisBuild := Some(2018)
 licenses         in ThisBuild += ("BSD-3-Clause", new URL("https://opensource.org/licenses/BSD-3-Clause"))
 
 // run dependencyUpdates whenever we [re]load. Spooky eh?
-onLoad in Global := { s => "dependencyUpdates" :: s }
+// onLoad in Global := { s => "dependencyUpdates" :: s }
 
 lazy val scalacSettings = Seq(
   scalaVersion := "2.12.6",
@@ -107,4 +107,5 @@ lazy val core = project
     ),
     scalacOptions += "-Yno-predef"
   )
+  .enablePlugins(JavaAppPackaging)
 
