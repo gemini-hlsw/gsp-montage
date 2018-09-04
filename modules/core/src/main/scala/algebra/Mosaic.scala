@@ -20,6 +20,10 @@ trait Mosaic[F[_]] {
 
 object Mosaic {
 
+  /**
+   * Construct a `Mosaic` instance for conforming `F` given a log, a montage implementation that
+   * uses managed temporary files, and a means of fetching batches of URLs.
+   */
   def apply[F[_]: Sync](log: Log[F], montage: MontageR[F], fetch: Fetch[F]): Mosaic[F] =
     new Mosaic[F] {
 

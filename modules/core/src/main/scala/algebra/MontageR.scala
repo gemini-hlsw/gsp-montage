@@ -21,6 +21,10 @@ trait MontageR[F[_]] {
 
 object MontageR {
 
+  /**
+   * Construct a `MontageR` for conforming `F` given a montage implementation and a source of
+   * temporary files.
+   */
   def apply[F[_]: Sync](montage: Montage[F], temp: Temp[F]): MontageR[F] =
     new MontageR[F] {
 

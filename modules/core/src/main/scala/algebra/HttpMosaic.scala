@@ -23,6 +23,10 @@ trait HttpMosaic[F[_]] {
 
 object HttpMosaic {
 
+  /**
+   * Construct an HttpMosaic for the given response, given a cache keyed on mosaic arguments.
+   * This isn't fully baked … we need a data type for query parameters here.
+   */
   def apply[F[_]: Sync](res: HttpServletResponse, cache: Cache[F, (String, Double, Char)]): HttpMosaic[F] =
     new HttpMosaic[F] {
 
@@ -37,19 +41,30 @@ object HttpMosaic {
 
     }
 
+  /**
+   * Construct a cache for mosaics given a log, a source of temporary files, a filesystem root for
+   * cached mosaics, and a `Mosaic` instance to do the real work.
+   */
   def cache[F[_]: Sync](log: Log[F], temp: Temp[F], cacheRoot: Path, mosaic: Mosaic[F]): Cache[F, (String, Double, Char)] = {
 
+    // Convert mosaic arguments into a filesystem path by URL-encoding them. This is bad because
+    // everything will end up in the same directory. What we really want is to partition by RA or
+    // something, but we don't have that structure yet (objOrLoc is an arbitrary string).
     val resolve: ((String, Double, Char)) => Path = { case (objOrLoc, radius, band) =>
-      Paths.get(URLEncoder.encode(s"$objOrLoc $radius $band", "US-ASCII")) // lame, do something better
+      Paths.get(URLEncoder.encode(s"$objOrLoc $radius $band", "US-ASCII"))
     }
 
+    // Delegate to the mosaic instance to generate the temporary output file, then cache it by
+    // moving it to the destination path.
     val fetch: ((String, Double, Char), Path) => F[_] = { case ((objOrLoc, radius, band), dest) =>
       mosaic.mosaic(objOrLoc, radius, band).use { temp =>
         Sync[F].delay(Files.move(temp, dest, REPLACE_EXISTING, ATOMIC_MOVE))
       }
     }
 
+    // And that's all we need!
     Cache(log, temp, cacheRoot, resolve, fetch)
+
   }
 
 }

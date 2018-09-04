@@ -23,12 +23,17 @@ trait Fetch[F[_]] {
 
 object Fetch {
 
-  /** A caching implementation. */
+  /**
+   * Construct a Fetch for conforming `F` given a log, a cache for storing retrieved data, and a
+   * source of temporary files. Note that `Par[F]` is available for `IO` by virtue of the implicit
+   * `ContextSwitch` introduced by `IOApp`.
+   */
   def apply[F[_]: Sync: Par](log: Log[F], cache: Cache[F, URL], temp: Temp[F]): Fetch[F] =
     new Fetch[F] {
 
-      // Our implementation downloads stuff as needed and then copies it into a new temp directory
-      // so the user can do whatever they want without affecting the cache itself.
+      // Our implementation downloads stuff into the cached as needed, and then copies it into
+      // another directory so the user can do whatever they want with it, without affecting the
+      // cache contents. This may be overly defensive (symbolic links might be sufficient).
       def fetchMany[G[_]: Traverse](us: G[URL]): Resource[F, Path] =
         for {
           _  <- Resource.liftF(log.info(s"${us.size} tiles requested..."))
@@ -48,12 +53,13 @@ object Fetch {
         }
       }
 
-      // Copy `src` to a new uniquely-named file in `dir`, preserving the original file extension.
-      def copyInto(src: Path, dir: Path): Resource[F, Unit] =
+      // Resource yielding a copy of `src` (with a new unique name but the same extension) in `dir`.
+      // The copy will be deleted after use.
+      def copyInto(src: Path, dir: Path): Resource[F, Path] =
         for {
           dest <- temp.tempFileIn(dir, "mosaic-", ext(src))
           _    <- Resource.liftF(Sync[F].delay(Files.copy(src, dest, REPLACE_EXISTING)))
-        } yield ()
+        } yield dest
 
     }
 
