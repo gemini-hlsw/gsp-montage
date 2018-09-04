@@ -6,7 +6,7 @@ import java.nio.file._
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import mosaic.algebra._
-import org.eclipse.jetty.server.{ Handler, Request, Server }
+import org.eclipse.jetty.server.{ Request, Server }
 import org.eclipse.jetty.server.handler.AbstractHandler
 import scala.io.StdIn
 import scala.Predef._
@@ -35,42 +35,68 @@ object Main extends IOApp {
       )
     )
 
-  /** Parse arguments out of the request, or raise an error. */
-  def parse(req: HttpServletRequest): IO[(String, Double, Char)] = {
+  /** Parse arguments out of the request, if possible. */
+  def parse(req: HttpServletRequest): Option[(String, Double, Char)] = {
     val obj    = Option(req.getParameter("object"))
     val radius = Option(req.getParameter("radius")).fold(0.25)(_.toDouble)
     val band   = Option(req.getParameter("band")).map(_.head)
-    (obj, band).mapN((_, radius, _)).liftTo[IO] {
-      new Exception(s"Invalid query string: ${req.getQueryString}"): Throwable
-    }
+    (obj, band).mapN((_, radius, _))
   }
 
-  /** Our functional servlet handler. */
-  def mosaic(req: HttpServletRequest, res: HttpServletResponse): IO[Unit] =
-    for {
-      log  <- Log.newLog[IO]
-      _    <- log.info(s"""${req.getMethod} ${req.getRequestURL}${Option(req.getQueryString).foldMap("?" + _)}""")
-      args <- parse(req); (objOrLoc, radius, band) = args
-      mos   = ioHttpMosaic(log, res)
-      bs   <- mos.respond(objOrLoc, radius, band)
-      _    <- log.info(s"Done. Sent $bs bytes.")
-    } yield ()
+  /** Our mosaic handler. */
+  def mosaic(log: Log[IO], req: HttpServletRequest, res: HttpServletResponse): IO[Unit] =
+    parse(req) match {
 
-  /** Convert a functional handler into a Jetty handler. */
-  def mkHandler(f: (HttpServletRequest, HttpServletResponse) => IO[Unit]): Handler =
-    new AbstractHandler {
-      override def handle(tar: String, base: Request, req: HttpServletRequest, res: HttpServletResponse) =
-        f(req, res).unsafeRunSync
+      case Some((objOrLoc, radius, band)) =>
+        for {
+          bs <- ioHttpMosaic(log, res).respond(objOrLoc, radius, band)
+          _  <- log.info(s"Sent $bs bytes.")
+        } yield ()
+
+      case None =>
+        IO {
+          res.sendError(
+            HttpServletResponse.SC_BAD_REQUEST,
+            s"""|
+                |Invalid query string: ${req.getQueryString}
+                |Expected the following query arguments:
+                |  object - an RA/DEC string like 04:55:10.305 07:55:25.43
+                |  radius - a radius in degrees (optiona, default 0.25)
+                |  band   - a 2MASS band, one of J H K
+            """.stripMargin
+          )
+        }
     }
+
+  /** A very minimal request router. We don't even look at the URI. */
+  def route(req: HttpServletRequest, res: HttpServletResponse): IO[Unit] =
+    for {
+      log <- Log.newLog[IO]
+      _   <- log.info(s"""${req.getMethod} ${req.getRequestURL}${Option(req.getQueryString).foldMap("?" + _)}""")
+      _   <- req.getMethod match {
+               case "GET" => mosaic(log, req, res)
+               case _     => IO(res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED))
+             }
+      _   <- log.info(s"Request complete.")
+    } yield ()
 
   /** Our entry point. */
   def run(args: List[String]): IO[ExitCode] =
     IO {
       val server = new Server(8080)
-      server.setHandler(mkHandler(mosaic))
+      server.setHandler {
+        new AbstractHandler {
+          override def handle(
+            target:      String,
+            baseRequest: Request,
+            request:     HttpServletRequest,
+            response:    HttpServletResponse
+          ): Unit =
+            route(request, response).unsafeRunSync
+        }
+      }
       server.start()
-      Console.println("Press <Enter> to exit.")
-      StdIn.readLine()
+      StdIn.readLine("Up and running. Press <Enter> to shut down the server: ")
       server.stop()
       ExitCode.Success
     }
