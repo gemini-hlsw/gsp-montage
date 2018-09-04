@@ -18,21 +18,27 @@ object Main extends IOApp {
   val cacheRoot = Paths.get("/tmp", "mosaic-cache")
 
   /** Our interpreter. Looks like a lot of work but there's only one way to construct it. */
-  def ioHttpMosaic(log: Log[IO]): HttpMosaic[IO] =
+  def ioHttpMosaic(log: Log[IO], res: HttpServletResponse): HttpMosaic[IO] =
     HttpMosaic(
-      Mosaic(
+      res,
+      HttpMosaic.cache(
         log,
-        MontageR(Montage(Exec(log)), Temp[IO]),
-        Fetch(log, Cache.urlCache(log, Temp[IO], cacheRoot), Temp[IO])
+        Temp[IO],
+        cacheRoot,
+        Mosaic(
+          log,
+          MontageR(Montage(Exec(log)), Temp[IO]),
+          Fetch(log, Cache.urlCache(log, Temp[IO], cacheRoot), Temp[IO])
+        )
       )
     )
 
   def mosaic(objOrLoc: String, radius: Double, band: Char, req: HttpServletRequest, res: HttpServletResponse): IO[Unit] =
     for {
       log <- Log.newLog[IO]
-      mos  = ioHttpMosaic(log)
       _   <- log.info(s"""${req.getMethod} ${req.getRequestURL}${Option(req.getQueryString).foldMap("?" + _)}""")
-      bs  <- mos.respond(objOrLoc, radius, band, res)
+      mos  = ioHttpMosaic(log, res)
+      bs  <- mos.respond(objOrLoc, radius, band)
       _   <- log.info(s"Done. Sent $bs bytes.")
     } yield ()
 
