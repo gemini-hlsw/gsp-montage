@@ -83,6 +83,7 @@ object Main extends IOApp {
   /** Our entry point. */
   def run(args: List[String]): IO[ExitCode] =
     IO {
+      val heroku = sys.env.contains("HEROKU")
       val port   = sys.env.get("PORT").fold(8080)(_.toInt)
       val server = new Server(port)
       server.setHandler {
@@ -97,8 +98,13 @@ object Main extends IOApp {
         }
       }
       server.start()
-      StdIn.readLine("Up and running. Press <Enter> to shut down the server: ")
-      server.stop()
+      if (heroku) {
+        Console.println("Up and running. Waiting here forever ...")
+        server.join()
+      } else {
+        StdIn.readLine("Up and running. Press <Enter> to shut down the server: ")
+        server.stop()
+      }
       ExitCode.Success
     }
 
