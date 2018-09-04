@@ -83,7 +83,8 @@ object Main extends IOApp {
   /** Our entry point. */
   def run(args: List[String]): IO[ExitCode] =
     IO {
-      val server = new Server(8080)
+      val port   = sys.env.get("PORT").fold(8080)(_.toInt)
+      val server = new Server(port)
       server.setHandler {
         new AbstractHandler {
           override def handle(
