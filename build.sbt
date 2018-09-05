@@ -1,3 +1,5 @@
+import com.typesafe.sbt.packager.docker.Cmd
+
 // Library versions all in one place, for convenience and sanity.
 lazy val attoVersion          = "0.6.3"
 lazy val kindProjectorVersion = "0.9.7"
@@ -107,5 +109,39 @@ lazy val core = project
     ),
     scalacOptions += "-Yno-predef"
   )
-  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
+  .settings(
+    Docker / packageName := "web",
+    dockerRepository := Some("registry.heroku.com"),
+    dockerUsername   := Some("gemini-2mass-mosaic"),
+    name in Docker   := "web",
+    dockerAlias      := DockerAlias(
+      dockerRepository.value,
+      dockerUsername.value,
+      (name in Docker).value,
+      None
+    ),
+    dockerCommands   := """
+
+      FROM ubuntu:bionic
+
+      # Install the things we need
+      RUN apt-get update
+      RUN apt-get install --yes build-essential git libfontconfig openjdk-8-jre
+
+      # Build Montage from Rob's fork and add it to the path
+      RUN git clone -b mArchiveList-segfault https://github.com/tpolecat/Montage.git
+      WORKDIR /Montage
+      RUN make
+      WORKDIR /
+      ENV PATH="${PATH}:/Montage/bin"
+
+      # Set up the Scala app
+      WORKDIR /opt/docker
+      ADD --chown=daemon:daemon opt /opt
+      USER daemon
+      CMD /opt/docker/bin/mosaic-server-core
+
+    """.lines.map(_.trim).map(Cmd(_)).toSeq
+  )
 
