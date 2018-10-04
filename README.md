@@ -15,7 +15,7 @@ It also requires a patched OT with the change on my Ocs fork on the `tpe-fixes` 
    override def queryUrl(c: Coordinates, site: Option[Site]): NonEmptyList[URL] =
 -    NonEmptyList(new URL(s" http://irsa.ipac.caltech.edu/cgi-bin/Oasis/2MASSImg/nph-2massimg?objstr=${c.ra.toAngle.formatHMS}%20${c.dec.formatDMS}&size=${size.toArcsecs.toInt}&band=${band.name}"))
 +  //  NonEmptyList(new URL(s" http://irsa.ipac.caltech.edu/cgi-bin/Oasis/2MASSImg/nph-2massimg?objstr=${c.ra.toAngle.formatHMS}%20${c.dec.formatDMS}&size=${size.toArcsecs.toInt}&band=${band.name}"))
-+    NonEmptyList(new URL(s" http://localhost:8080/?object=${c.ra.toAngle.formatHMS}%20${c.dec.formatDMS}&radius=${0.25}&band=${band.name}"))
++    NonEmptyList(new URL(s" http://gemini-2mass-mosaic.herokuapp.com/?object=${c.ra.toAngle.formatHMS}%20${c.dec.formatDMS}&radius=${0.25}&band=${band.name}"))
  }
 ```
 
