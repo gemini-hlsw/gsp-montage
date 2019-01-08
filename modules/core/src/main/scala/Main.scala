@@ -61,7 +61,7 @@ object Main extends IOApp {
                 |Invalid query string: ${req.getQueryString}
                 |Expected the following query arguments:
                 |  object - an RA/DEC string like 04:55:10.305 07:55:25.43
-                |  radius - a radius in degrees (optiona, default 0.25)
+                |  radius - a radius in degrees (optional, default 0.25)
                 |  band   - a 2MASS band, one of J H K
             """.stripMargin
           )
