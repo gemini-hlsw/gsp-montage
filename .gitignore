@@ -12,6 +12,7 @@ lib_managed/
 src_managed/
 project/boot/
 project/plugins/project/
+project/hydra.sbt
 
 # Scala-IDE specific
 .scala_dependencies
@@ -34,3 +35,13 @@ bin/
 
 # IntelliJ
 .idea/
+
+# Mill
+out/
+
+# Bloop/Metals
+.bloop/
+.metals/
+
+# Vim
+*.swp
