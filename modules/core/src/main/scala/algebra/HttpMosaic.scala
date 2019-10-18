@@ -6,6 +6,7 @@ import java.net.URLEncoder
 import java.nio.file._
 import java.nio.file.StandardCopyOption._
 import javax.servlet.http.HttpServletResponse
+import io.chrisdavenport.log4cats.Logger
 
 /** Algebra for assembling a mosaic and sinking it to an `HttpServletResponse`. */
 trait HttpMosaic[F[_]] {
@@ -45,7 +46,7 @@ object HttpMosaic {
    * Construct a cache for mosaics given a log, a source of temporary files, a filesystem root for
    * cached mosaics, and a `Mosaic` instance to do the real work.
    */
-  def cache[F[_]: Sync](log: Log[F], temp: Temp[F], cacheRoot: Path, mosaic: Mosaic[F]): Cache[F, (String, Double, Char)] = {
+  def cache[F[_]: Sync](log: Logger[F], temp: Temp[F], cacheRoot: Path, mosaic: Mosaic[F]): Cache[F, (String, Double, Char)] = {
 
     // Convert mosaic arguments into a filesystem path by URL-encoding them. This is bad because
     // everything will end up in the same directory. What we really want is to partition by RA or

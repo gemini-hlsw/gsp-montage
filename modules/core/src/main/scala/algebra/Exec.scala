@@ -4,6 +4,7 @@ import cats.effect._
 import cats.implicits._
 import scala.collection.mutable.ListBuffer
 import scala.sys.process._
+import io.chrisdavenport.log4cats.Logger
 
 /** Agebra for running an external program. */
 trait Exec[F[_]] {
@@ -19,7 +20,7 @@ trait Exec[F[_]] {
 object Exec {
 
   /** Constuct a `Exec` for conforming `F`, given a `log` for messages. */
-  def apply[F[_]: Sync](log: Log[F]): Exec[F] =
+  def apply[F[_]: Sync](log: Logger[F]): Exec[F] =
     new Exec[F] {
 
       def run(cmd: String, args: String*): F[String] =

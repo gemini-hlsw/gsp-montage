@@ -10,6 +10,7 @@ import java.net.HttpURLConnection.{ HTTP_MOVED_PERM, HTTP_MOVED_TEMP }
 import java.io.InputStream
 import java.io.IOException
 import java.net.URLDecoder
+import io.chrisdavenport.log4cats.Logger
 
 /** A file cache keyed on values `K`. */
 trait Cache[F[_], K] {
@@ -31,7 +32,7 @@ object Cache {
    * given key into a file. This is the most general constructor.
    */
   def apply[F[_]: Sync, K](
-    log:       Log[F],
+    log:       Logger[F],
     temp:      Temp[F],
     cacheRoot: Path,
     resolve:   K => Path,
@@ -68,7 +69,7 @@ object Cache {
    * appear in URLs, discarding any query arguments.
    */
   def urlCache[F[_]: Sync, K](
-    log:       Log[F],
+    log:       Logger[F],
     temp:      Temp[F],
     cacheRoot: Path
   ): Cache[F, URL] = {

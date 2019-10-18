@@ -5,6 +5,7 @@ import cats.implicits._
 import java.net.URL
 import java.nio.file._
 import mosaic.data.Table
+import io.chrisdavenport.log4cats.Logger
 
 /** Algebra for creating mosaic images. */
 trait Mosaic[F[_]] {
@@ -24,7 +25,7 @@ object Mosaic {
    * Construct a `Mosaic` instance for conforming `F` given a log, a montage implementation that
    * uses managed temporary files, and a means of fetching batches of URLs.
    */
-  def apply[F[_]: Sync](log: Log[F], montage: MontageR[F], fetch: Fetch[F]): Mosaic[F] =
+  def apply[F[_]: Sync](log: Logger[F], montage: MontageR[F], fetch: Fetch[F]): Mosaic[F] =
     new Mosaic[F] {
 
       // Use mArchiveList to identify the tiles we need, fetch them, then create a header and

@@ -10,6 +10,7 @@ import org.eclipse.jetty.server.{ Request, Server }
 import org.eclipse.jetty.server.handler.AbstractHandler
 import scala.io.StdIn
 import scala.Predef._
+import io.chrisdavenport.log4cats.Logger
 
 object Main extends IOApp {
 
@@ -20,7 +21,7 @@ object Main extends IOApp {
    * Construct an HttpMosaic using the given [per-request] logger and a response that we will use
    * to send the FITS file to the user.
    */
-  def ioHttpMosaic(log: Log[IO], res: HttpServletResponse): HttpMosaic[IO] =
+  def ioHttpMosaic(log: Logger[IO], res: HttpServletResponse): HttpMosaic[IO] =
     HttpMosaic(
       res,
       HttpMosaic.cache(
@@ -44,7 +45,7 @@ object Main extends IOApp {
   }
 
   /** Our mosaic handler. */
-  def mosaic(log: Log[IO], req: HttpServletRequest, res: HttpServletResponse): IO[Unit] =
+  def mosaic(log: Logger[IO], req: HttpServletRequest, res: HttpServletResponse): IO[Unit] =
     parse(req) match {
 
       case Some((objOrLoc, radius, band)) =>
