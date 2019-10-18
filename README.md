@@ -22,6 +22,7 @@ This only works for Rob. Anyone else needs to be [added as a collaborator](https
 To release a new version to Heroku do:
 
 ```
+heroku container:login
 sbt core/docker:publish
 heroku container:release web
 ```

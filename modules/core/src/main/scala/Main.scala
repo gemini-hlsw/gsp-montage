@@ -47,7 +47,7 @@ object Main extends IOApp {
   def server(port: Int): Resource[IO, Server[IO]] = {
     Blocker[IO].flatMap { blocker =>
       BlazeServerBuilder[IO]
-        .bindHttp(port, "localhost")
+        .bindHttp(port, "0.0.0.0") // important to use 0.0.0.0 for Heroku
         .withHttpApp(service(blocker))
         .resource
     }

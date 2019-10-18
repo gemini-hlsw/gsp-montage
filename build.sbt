@@ -54,8 +54,8 @@ lazy val core = project
       RUN apt-get update
       RUN apt-get install --yes build-essential git libfontconfig openjdk-8-jre
 
-      # Build Montage from Rob's fork and add it to the path
-      RUN git clone -b mArchiveList-segfault https://github.com/tpolecat/Montage.git
+      # Build Montage from master … feelin' lucky.
+      RUN git clone https://github.com/Caltech-IPAC/Montage.git
       WORKDIR /Montage
       RUN make
       WORKDIR /
