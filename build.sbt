@@ -6,6 +6,7 @@ lazy val fs2Version           = "2.0.1"
 lazy val jettyVersion         = "9.4.11.v20180605"
 lazy val log4catsVersion      = "1.0.1"
 lazy val slf4jVersion         = "1.7.28"
+lazy val http4sVersion        = "0.21.0-M5"
 
 inThisBuild(Seq(
   scalaVersion       := "2.13.1",
@@ -23,12 +24,15 @@ lazy val core = project
     name        := "mosaic-server-core",
     description := "Mosaic image server based on Montage.",
     libraryDependencies ++= Seq(
-      "org.tpolecat"      %% "atto-core"      % attoVersion,
-      "co.fs2"            %% "fs2-core"       % fs2Version,
-      "org.eclipse.jetty" %  "jetty-server"   % jettyVersion,
-      "io.chrisdavenport" %% "log4cats-core"  % log4catsVersion,
-      "io.chrisdavenport" %% "log4cats-slf4j" % log4catsVersion,
-      "org.slf4j"         %  "slf4j-simple"   % slf4jVersion
+      "org.tpolecat"      %% "atto-core"           % attoVersion,
+      "co.fs2"            %% "fs2-core"            % fs2Version,
+      "org.eclipse.jetty" %  "jetty-server"        % jettyVersion,
+      "io.chrisdavenport" %% "log4cats-core"       % log4catsVersion,
+      "io.chrisdavenport" %% "log4cats-slf4j"      % log4catsVersion,
+      "org.slf4j"         %  "slf4j-simple"        % slf4jVersion,
+      "org.http4s"        %% "http4s-dsl"          % http4sVersion,
+      "org.http4s"        %% "http4s-blaze-server" % http4sVersion,
+      "org.http4s"        %% "http4s-blaze-client" % http4sVersion
     ),
     scalacOptions += "-Yno-predef"
   )

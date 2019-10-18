@@ -1,12 +1,11 @@
 package mosaic.algebra
 
 import cats.effect._
-import cats.implicits._
 import java.net.URLEncoder
 import java.nio.file._
 import java.nio.file.StandardCopyOption._
-import javax.servlet.http.HttpServletResponse
 import io.chrisdavenport.log4cats.Logger
+import fs2.Stream
 
 /** Algebra for assembling a mosaic and sinking it to an `HttpServletResponse`. */
 trait HttpMosaic[F[_]] {
@@ -18,7 +17,7 @@ trait HttpMosaic[F[_]] {
    * given `HttpServletResponse`, setting headers as needed, yielding the total number of bytes
    * sent.
    */
-  def respond(objOrLoc: String, radius: Double, band: Char): F[Long]
+  def respond(objOrLoc: String, radius: Double, band: Char): Stream[F, Byte]
 
 }
 
@@ -28,17 +27,14 @@ object HttpMosaic {
    * Construct an HttpMosaic for the given response, given a cache keyed on mosaic arguments.
    * This isn't fully baked … we need a data type for query parameters here.
    */
-  def apply[F[_]: Sync](res: HttpServletResponse, cache: Cache[F, (String, Double, Char)]): HttpMosaic[F] =
+  def apply[F[_]: Sync: ContextShift](cache: Cache[F, (String, Double, Char)], blocker: Blocker): HttpMosaic[F] =
     new HttpMosaic[F] {
 
-      def respond(objOrLoc: String, radius: Double, band: Char): F[Long] =
+      def respond(objOrLoc: String, radius: Double, band: Char): Stream[F, Byte] =
         for {
-          p <- cache.get((objOrLoc, radius, band))
-          _ <- Sync[F].delay(res.setStatus(HttpServletResponse.SC_OK))
-          _ <- Sync[F].delay(res.setContentType("application/fits"))
-          _ <- Sync[F].delay(res.setContentLength(p.toFile.length.toInt))
-          n <- Sync[F].delay(Files.copy(p, res.getOutputStream))
-        } yield n
+          p <- Stream.eval(cache.get((objOrLoc, radius, band)))
+          s <- fs2.io.file.readAll[F](p, blocker, 1024 * 64)
+        } yield s
 
     }
 
