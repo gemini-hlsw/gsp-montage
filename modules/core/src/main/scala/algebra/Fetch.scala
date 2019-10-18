@@ -6,6 +6,7 @@ import cats.effect._
 import java.net.URL
 import java.nio.file._
 import java.nio.file.StandardCopyOption._
+import io.chrisdavenport.log4cats.Logger
 
 /** Algebra for a web client that fetches a batch of URLs. */
 trait Fetch[F[_]] {
@@ -27,7 +28,7 @@ object Fetch {
    * source of temporary files. Note that `Par[F]` is available for `IO` by virtue of the implicit
    * `ContextSwitch` introduced by `IOApp`.
    */
-  def apply[F[_]: Sync: Parallel](log: Log[F], cache: Cache[F, URL], temp: Temp[F]): Fetch[F] =
+  def apply[F[_]: Sync: Parallel](log: Logger[F], cache: Cache[F, URL], temp: Temp[F]): Fetch[F] =
     new Fetch[F] {
 
       // Our implementation downloads stuff into the cached as needed, and then copies it into
