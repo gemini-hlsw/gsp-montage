@@ -5,6 +5,11 @@ import cats.implicits._
 import java.net.URL
 import java.nio.file._
 import java.nio.file.StandardCopyOption._
+import java.net.HttpURLConnection
+import java.net.HttpURLConnection.{ HTTP_MOVED_PERM, HTTP_MOVED_TEMP }
+import java.io.InputStream
+import java.io.IOException
+import java.net.URLDecoder
 
 /** A file cache keyed on values `K`. */
 trait Cache[F[_], K] {
@@ -74,9 +79,29 @@ object Cache {
     val path: URL => Path = url =>
       cacheRoot.resolve(Paths.get(url.getHost, url.getPath.split("/"): _*))
 
+    // The server is now forwarding from HTTP to HTTPS, which java.net.HttpURLConnection will not
+    // do. So to handle this we need to read the headers and redirect manually.
+    def openStream(url: URL, maxRedirects: Int = 3): F[InputStream] =
+      if (maxRedirects < 0)
+        Sync[F].raiseError(new IOException("Too many redirects."))
+      else
+        log.info(s"Trying $url") *> Sync[F].defer {
+          val conn = url.openConnection().asInstanceOf[HttpURLConnection]
+          conn.setInstanceFollowRedirects(false)
+          conn.getResponseCode() match {
+            case HTTP_MOVED_PERM | HTTP_MOVED_TEMP =>
+              val loc  = URLDecoder.decode(conn.getHeaderField("Location"), "UTF-8");
+              val urlʹ = new URL(url, loc);  // Deal with relative URLs
+              log.info(s"Redirecting to $urlʹ") *> openStream(urlʹ, maxRedirects - 1)
+            case _ => conn.getInputStream.pure[F]
+          }
+        }
+
     // Fetch the URL contents into the given file path.
     val fetch: (URL, Path) => F[Long] = (url, path) =>
-      Sync[F].delay(Files.copy(url.openStream, path, REPLACE_EXISTING))
+      openStream(url).flatMap { is =>
+        Sync[F].delay(Files.copy(is, path, REPLACE_EXISTING))
+      }
 
     apply(log, temp, cacheRoot, path, fetch)
 

@@ -3,7 +3,6 @@ package mosaic.algebra
 import cats._
 import cats.implicits._
 import cats.effect._
-import cats.temp.par._
 import java.net.URL
 import java.nio.file._
 import java.nio.file.StandardCopyOption._
@@ -28,7 +27,7 @@ object Fetch {
    * source of temporary files. Note that `Par[F]` is available for `IO` by virtue of the implicit
    * `ContextSwitch` introduced by `IOApp`.
    */
-  def apply[F[_]: Sync: Par](log: Log[F], cache: Cache[F, URL], temp: Temp[F]): Fetch[F] =
+  def apply[F[_]: Sync: Parallel](log: Log[F], cache: Cache[F, URL], temp: Temp[F]): Fetch[F] =
     new Fetch[F] {
 
       // Our implementation downloads stuff into the cached as needed, and then copies it into
