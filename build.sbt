@@ -3,7 +3,6 @@ import com.typesafe.sbt.packager.docker.Cmd
 lazy val kindProjectorVersion = "0.11.0"
 lazy val attoVersion          = "0.7.1"
 lazy val fs2Version           = "2.0.1"
-lazy val jettyVersion         = "9.4.11.v20180605"
 lazy val log4catsVersion      = "1.0.1"
 lazy val slf4jVersion         = "1.7.28"
 lazy val http4sVersion        = "0.21.0-M5"
@@ -26,7 +25,6 @@ lazy val core = project
     libraryDependencies ++= Seq(
       "org.tpolecat"      %% "atto-core"           % attoVersion,
       "co.fs2"            %% "fs2-core"            % fs2Version,
-      "org.eclipse.jetty" %  "jetty-server"        % jettyVersion,
       "io.chrisdavenport" %% "log4cats-core"       % log4catsVersion,
       "io.chrisdavenport" %% "log4cats-slf4j"      % log4catsVersion,
       "org.slf4j"         %  "slf4j-simple"        % slf4jVersion,
