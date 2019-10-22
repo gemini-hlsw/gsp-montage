@@ -30,7 +30,7 @@ heroku container:release web
 An example invocation is:
 
 ```
-curl -o /tmp/foo.fits 'http://gemini-2mass-mosaic.herokuapp.com/?object=05:51:10.305%2008:10:21.43&radius=0.25&band=H'
+curl -o /tmp/foo.fits 'http://gemini-2mass-mosaic.herokuapp.com/v1/mosaic?object=05:51:10.305%2008:10:21.43&radius=0.25&band=H'
 ```
 
 

@@ -32,7 +32,8 @@ lazy val core = project
       "org.http4s"        %% "http4s-dsl"          % http4sVersion,
       "org.http4s"        %% "http4s-blaze-server" % http4sVersion,
       "org.http4s"        %% "http4s-blaze-client" % http4sVersion,
-      "dev.profunktor"    %% "redis4cats-effects" % redis4catsVersion
+      "dev.profunktor"    %% "redis4cats-effects"  % redis4catsVersion,
+      "dev.profunktor"    %% "redis4cats-log4cats" % redis4catsVersion
     ),
     scalacOptions += "-Yno-predef"
   )
