@@ -6,6 +6,7 @@ lazy val fs2Version           = "2.0.1"
 lazy val log4catsVersion      = "1.0.1"
 lazy val slf4jVersion         = "1.7.28"
 lazy val http4sVersion        = "0.21.0-M5"
+lazy val redis4catsVersion    = "0.9.0"
 
 inThisBuild(Seq(
   scalaVersion       := "2.13.1",
@@ -30,7 +31,9 @@ lazy val core = project
       "org.slf4j"         %  "slf4j-simple"        % slf4jVersion,
       "org.http4s"        %% "http4s-dsl"          % http4sVersion,
       "org.http4s"        %% "http4s-blaze-server" % http4sVersion,
-      "org.http4s"        %% "http4s-blaze-client" % http4sVersion
+      "org.http4s"        %% "http4s-blaze-client" % http4sVersion,
+      "dev.profunktor"    %% "redis4cats-effects"  % redis4catsVersion,
+      "dev.profunktor"    %% "redis4cats-log4cats" % redis4catsVersion
     ),
     scalacOptions += "-Yno-predef"
   )
@@ -65,7 +68,7 @@ lazy val core = project
       WORKDIR /opt/docker
       ADD --chown=daemon:daemon opt /opt
       USER daemon
-      CMD /opt/docker/bin/mosaic-server-core
+      CMD /opt/docker/bin/mosaic-server-core -J-Xmx256m
 
     """.lines.map(_.trim).map(Cmd(_)).toSeq
   )
