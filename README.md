@@ -17,7 +17,9 @@ It should work for you if you patch your OT's `ImageCatalog.scala` thus:
 
 ### Running Locally
 
-You need a local Redis instance, which you can start up thus:
+First you need to check out and build [Caltech-IPAC/Montage](https://github.com/Caltech-IPAC/Montage) and make sure it's on your path. You can test this by typing `mHdr` with no args and you should get an error message back.
+
+You also need a local Redis instance, which you can start up thus:
 
 ```
 docker run -p 6379:6379 redis:5.0.0
