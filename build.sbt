@@ -68,7 +68,7 @@ lazy val core = project
       WORKDIR /opt/docker
       ADD --chown=daemon:daemon opt /opt
       USER daemon
-      CMD /opt/docker/bin/mosaic-server-core
+      CMD /opt/docker/bin/mosaic-server-core -J-Xmx256m
 
     """.lines.map(_.trim).map(Cmd(_)).toSeq
   )

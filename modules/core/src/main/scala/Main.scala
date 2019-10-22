@@ -94,11 +94,11 @@ object Main extends IOApp {
         }
     } .orNotFound
 
-  def server(port: Int)(
+  def server(port: Int, redisUrl: String)(
     implicit log: dev.profunktor.redis4cats.effect.Log[IO]
   ): Resource[IO, Server[IO]] =
     for {
-      uri     <- Resource.liftF(RedisURI.make[IO]("redis://localhost"))
+      uri     <- Resource.liftF(RedisURI.make[IO](redisUrl))
       client  <- RedisClient[IO](uri)
       redis   <- Redis[IO, URL, Array[Byte]](client, codec, uri)
       server  <- BlazeServerBuilder[IO]
@@ -110,7 +110,8 @@ object Main extends IOApp {
 
   def run(args: List[String]): IO[ExitCode] = {
     val port = sys.env.get("PORT").fold(8080)(_.toInt)
-    server(port).use { _ => IO.never.as(ExitCode.Success) }
+    val redis = sys.env.getOrElse("REDIS_URL", "redis://localhost")
+    server(port, redis).use { _ => IO.never.as(ExitCode.Success) }
   }
 
 }
