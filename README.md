@@ -11,8 +11,22 @@ It should work for you if you patch your OT's `ImageCatalog.scala` thus:
    override def queryUrl(c: Coordinates, site: Option[Site]): NonEmptyList[URL] =
 -    NonEmptyList(new URL(s" http://irsa.ipac.caltech.edu/cgi-bin/Oasis/2MASSImg/nph-2massimg?objstr=${c.ra.toAngle.formatHMS}%20${c.dec.formatDMS}&size=${size.toArcsecs.toInt}&band=${band.name}"))
 +  //  NonEmptyList(new URL(s" http://irsa.ipac.caltech.edu/cgi-bin/Oasis/2MASSImg/nph-2massimg?objstr=${c.ra.toAngle.formatHMS}%20${c.dec.formatDMS}&size=${size.toArcsecs.toInt}&band=${band.name}"))
-+    NonEmptyList(new URL(s" http://gemini-2mass-mosaic.herokuapp.com/?object=${c.ra.toAngle.formatHMS}%20${c.dec.formatDMS}&radius=${0.25}&band=${band.name}"))
++    NonEmptyList(new URL(s" http://gemini-2mass-mosaic.herokuapp.com/v1/mosaic?object=${c.ra.toAngle.formatHMS}%20${c.dec.formatDMS}&radius=${0.25}&band=${band.name}"))
  }
+```
+
+### Running Locally
+
+You need a local Redis instance, which you can start up thus:
+
+```
+docker run -p 6379:6379 redis:5.0.0
+```
+
+And then `sbt core/run` or `bloop run core`. An example invocation is:
+
+```
+curl -o /tmp/foo.fits 'http://localhost:8080/v1/mosaic?object=05:51:10.305%2008:10:21.43&radius=0.25&band=H'
 ```
 
 ### Running on Heroku
