@@ -1,0 +1,5 @@
+# This tells Heroku how to build (and run) our docker image.
+# See https://devcenter.heroku.com/articles/build-docker-images-heroku-yml
+build:
+  docker:
+    web: cat modules/core/target/docker/stage/Dockerfile
