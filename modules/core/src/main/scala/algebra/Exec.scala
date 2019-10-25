@@ -20,16 +20,18 @@ trait Exec[F[_]] {
 object Exec {
 
   /** Constuct a `Exec` for conforming `F`, given a `log` for messages. */
-  def apply[F[_]: Sync](log: Logger[F]): Exec[F] =
+  def apply[F[_]: Sync: ContextShift](log: Logger[F], blocker: Blocker): Exec[F] =
     new Exec[F] {
 
       def run(cmd: String, args: String*): F[String] =
-        for {
-          _ <- log.info(s"$cmd ${args.mkString(" ")}")
-          s <- Sync[F].delay(unsafeExec(cmd, args: _*))
-          _ <- log.info(s._2)
-          _ <- fail(s._1, s._2).whenA(s._1 != 0)
-        } yield s._2
+        blocker.blockOn {
+          for {
+            _ <- log.info(s"$cmd ${args.mkString(" ")}")
+            s <- Sync[F].delay(unsafeExec(cmd, args: _*))
+            _ <- log.info(s._2)
+            _ <- fail(s._1, s._2).whenA(s._1 != 0)
+          } yield s._2
+        }
 
       // Fail with an error message.
       def fail[A](exitCode: Int, message: String): F[A] =
