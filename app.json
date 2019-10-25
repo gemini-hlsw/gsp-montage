@@ -1,19 +1,10 @@
 {
-  "addons": [
-    "heroku-redis"
-  ],
-  "buildpacks": [
-
-  ],
   "description": "Configuration for review apps.",
-  "env": {
-    "REDIS_URL": {
-      "required": true
-    },
-    "SBT_PRE_TASKS": {
-      "required": true
+  "addons": [
+    {
+      "plan": "heroku-redis:hobby-dev"
     }
-  },
+  ],
   "formation": {
     "web": {
       "quantity": 1
