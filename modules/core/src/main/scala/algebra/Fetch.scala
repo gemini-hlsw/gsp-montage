@@ -29,10 +29,11 @@ trait Fetch[F[_]] {
 
 object Fetch {
 
-  def apply[F[_]: Sync: Parallel](
-    log:   Logger[F],
-    temp:  Temp[F],
-    redis: StringCommands[F, URL, Array[Byte]],
+  def apply[F[_]: Sync: Parallel: ContextShift](
+    log:     Logger[F],
+    temp:    Temp[F],
+    redis:   StringCommands[F, URL, Array[Byte]],
+    blocker: Blocker
   ): Fetch[F] =
     new Fetch[F] {
 
@@ -77,9 +78,9 @@ object Fetch {
           case None =>
             for {
               _   <- log.info(s"Cache miss on $url")
-              is  <- openStream(url, MaxRedirects)
-              _   <- Sync[F].delay(Files.copy(is, file, REPLACE_EXISTING))
-              bs  <- Sync[F].delay(Files.readAllBytes(file))
+              is  <- blocker.blockOn(openStream(url, MaxRedirects))
+              _   <- blocker.blockOn(Sync[F].delay(Files.copy(is, file, REPLACE_EXISTING)))
+              bs  <- blocker.blockOn(Sync[F].delay(Files.readAllBytes(file)))
               _   <- redis.set(url, bs)
             } yield ()
 

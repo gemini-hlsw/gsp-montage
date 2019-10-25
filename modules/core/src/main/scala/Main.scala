@@ -51,15 +51,20 @@ object Main extends IOApp {
   object Radius extends OptionalQueryParamDecoderMatcher[Double]("radius")
   object Band   extends QueryParamDecoderMatcher[Char]("band")
 
-  def mosaic(url: URL, log: Logger[IO], redis: StringCommands[IO, URL, Array[Byte]]): HttpMosaic[IO] =
+  def mosaic(
+    url: URL,
+    log: Logger[IO],
+    redis: StringCommands[IO, URL, Array[Byte]],
+    blocker: Blocker
+  ): HttpMosaic[IO] =
     HttpMosaic(
       log,
       redis,
       url,
       Mosaic(
         log,
-        MontageR(Montage(Exec(log)), Temp[IO]),
-        Fetch(log, Temp[IO], redis)
+        MontageR(Montage(Exec(log, blocker)), Temp[IO]),
+        Fetch(log, Temp[IO], redis, blocker)
       )
     )
 
@@ -83,12 +88,12 @@ object Main extends IOApp {
       }
     }
 
-  def service(redis: StringCommands[IO, URL, Array[Byte]]): HttpApp[IO] =
+  def service(redis: StringCommands[IO, URL, Array[Byte]], blocker: Blocker): HttpApp[IO] =
     HttpRoutes.of[IO] {
       case req @ GET -> Root / "v1" / "mosaic" :? Object(o) +& Radius(r) +& Band(b) =>
         newLog[IO].flatMap { log =>
           val url  = new URL("http://0.0.0.0" + req.uri.renderString)
-          val mos  = mosaic(url, log, redis)
+          val mos  = mosaic(url, log, redis, blocker)
           val data = mos.stream(o, r.getOrElse(0.25), b)
           Ok(data, `Content-Type`(MediaType.application.fits))
         }
@@ -98,12 +103,13 @@ object Main extends IOApp {
     implicit log: dev.profunktor.redis4cats.effect.Log[IO]
   ): Resource[IO, Server[IO]] =
     for {
+      blocker <- Blocker[IO]
       uri     <- Resource.liftF(RedisURI.make[IO](redisUrl))
       client  <- RedisClient[IO](uri)
       redis   <- Redis[IO, URL, Array[Byte]](client, codec, uri)
       server  <- BlazeServerBuilder[IO]
         .bindHttp(port, "0.0.0.0") // important to use 0.0.0.0 for Heroku
-        .withHttpApp(service(redis))
+        .withHttpApp(service(redis, blocker))
         .resource
     } yield server
 
