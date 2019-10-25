@@ -4,7 +4,7 @@ This is a server application that addresses the issue where 2MASS tiles overlap 
 
 This application runs in a Docker container that includes both the Montage binaries and the Scala server. The `Dockerfile` in the root of this project builds the Docker image. See below for information on building and running locally.
 
-This application is deployed on Heroku under the name `gsp-montage`. Gemini HLSW members can examine the application [here](https://dashboard.heroku.com/apps/gsp-montage). Deployment is **automatic**: all pushes to `master` will cause a new version to be deployed to production.
+This application is deployed on Heroku under the name `gsp-montage`. Gemini HLSW members can examine the application [here](https://dashboard.heroku.com/apps/gsp-montage). Deployment is **automatic**: all pushes to `master` will cause a new version to be deployed to production. You can look at the "Activity" tab in Heroku to see this.
 
 You can try out the production app by swapping `gsp-montage.herokuapp.com` for `localhost:8080` in the `curl` example below.
 
