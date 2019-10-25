@@ -1,5 +1,7 @@
 ## mosaic-server
 
+trivial change
+
 This is a partial fix for the issue where 2MASS tiles overlap the FOV in a non-helpful way, as described in Gemini issue `REL-1093`.
 
 It should work for you if you patch your OT's `ImageCatalog.scala` thus:
