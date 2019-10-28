@@ -41,4 +41,3 @@ And run a container using the image you just made.
     docker run -t -i -p 8080:8080 -e PORT=8080 -e REDIS_URL=redis://host.docker.internal gsp-montage
 
 The same `curl` command above in **Local Development** should now work.
-
