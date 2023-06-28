@@ -1,17 +1,15 @@
 import com.typesafe.sbt.packager.docker.Cmd
 
-lazy val kindProjectorVersion = "0.11.0"
-lazy val attoVersion          = "0.7.1"
-lazy val fs2Version           = "2.0.1"
-lazy val log4catsVersion      = "1.0.1"
-lazy val slf4jVersion         = "1.7.28"
-lazy val http4sVersion        = "0.21.0-M5"
-lazy val redis4catsVersion    = "0.9.0"
+lazy val attoVersion          = "0.9.5"
+lazy val fs2Version           = "3.7.0"
+lazy val log4catsVersion      = "2.6.0"
+lazy val slf4jVersion         = "2.0.7"
+lazy val http4sVersion        = "1.0.0-M38"
+lazy val redis4catsVersion    = "1.4.3"
 
 inThisBuild(Seq(
-  scalaVersion       := "2.13.1",
+  scalaVersion       := "2.13.11",
   crossScalaVersions := Seq(scalaVersion.value),
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % kindProjectorVersion cross CrossVersion.full)
 ))
 
 lazy val mosaic_server = project.in(file("."))
@@ -26,8 +24,8 @@ lazy val core = project
     libraryDependencies ++= Seq(
       "org.tpolecat"      %% "atto-core"           % attoVersion,
       "co.fs2"            %% "fs2-core"            % fs2Version,
-      "io.chrisdavenport" %% "log4cats-core"       % log4catsVersion,
-      "io.chrisdavenport" %% "log4cats-slf4j"      % log4catsVersion,
+      "org.typelevel"     %% "log4cats-core"       % log4catsVersion,
+      "org.typelevel"     %% "log4cats-slf4j"      % log4catsVersion,
       "org.slf4j"         %  "slf4j-simple"        % slf4jVersion,
       "org.http4s"        %% "http4s-dsl"          % http4sVersion,
       "org.http4s"        %% "http4s-blaze-server" % http4sVersion,
@@ -39,14 +37,14 @@ lazy val core = project
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(
-    Docker / packageName := "web",
+    // Docker / packageName := "web",
     dockerRepository := Some("registry.heroku.com"),
     dockerUsername   := Some("gemini-2mass-mosaic"),
-    name in Docker   := "web",
+    Docker / name    := "web",
     dockerAlias      := DockerAlias(
       dockerRepository.value,
       dockerUsername.value,
-      (name in Docker).value,
+      (Docker / name).value,
       None
     ),
     dockerCommands   := """
@@ -70,6 +68,6 @@ lazy val core = project
       USER daemon
       CMD /opt/docker/bin/mosaic-server-core -J-Xmx256m
 
-    """.lines.map(_.trim).map(Cmd(_)).toSeq
+    """.linesIterator.map(_.trim).map(Cmd(_)).toSeq
   )
 

@@ -1,3 +1,6 @@
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+
 package mosaic.algebra
 
 import cats.effect._
@@ -41,7 +44,7 @@ object Exec {
       // Side-effecting execution returning exit code and output.
       private def unsafeExec(cmd: String, args: String*): (Int, String) = {
         val buf = ListBuffer[String]()
-        val exitCode = (cmd +: args).cat.run(ProcessLogger(buf.append(_))).exitValue
+        val exitCode = (cmd +: args).cat.run(ProcessLogger(buf.append(_))).exitValue()
         (exitCode, buf.mkString("\n"))
       }
 
