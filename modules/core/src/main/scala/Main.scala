@@ -5,19 +5,18 @@ package mosaic
 
 import cats.effect._
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import mosaic.algebra._
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.headers.`Content-Type`
 import org.http4s.implicits._
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.Server
 import scala.Predef.{ -> => _, _}
 import dev.profunktor.redis4cats.algebra.StringCommands
 import java.net.URL
-import dev.profunktor.redis4cats.domain.RedisCodec
-import dev.profunktor.redis4cats.domain.LiveRedisCodec
+import dev.profunktor.redis4cats.data.RedisCodec
 import dev.profunktor.redis4cats.log4cats._
 import io.lettuce.core.codec.ByteArrayCodec
 import io.lettuce.core.codec.ToByteBufEncoder
@@ -27,8 +26,8 @@ import io.lettuce.core.codec.StringCodec
 import dev.profunktor.redis4cats.connection.RedisClient
 import dev.profunktor.redis4cats.connection.RedisURI
 import java.util.concurrent.atomic.AtomicInteger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import dev.profunktor.redis4cats.interpreter.Redis
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+import dev.profunktor.redis4cats.Redis
 
 object Main extends IOApp {
 
@@ -68,7 +67,7 @@ object Main extends IOApp {
 
   // Lame. This should be an invariant bifunctor
   def codec: RedisCodec[URL, Array[Byte]] =
-    LiveRedisCodec[URL, Array[Byte]] {
+    RedisCodec[URL, Array[Byte]] {
       val bytes = ByteArrayCodec.INSTANCE
       val utf8  = StringCodec.UTF8
       new io.lettuce.core.codec.RedisCodec[URL, Array[Byte]] with ToByteBufEncoder[URL, Array[Byte]] {
@@ -99,11 +98,12 @@ object Main extends IOApp {
 
   def server(port: Int, redisUrl: String)(
     implicit log: dev.profunktor.redis4cats.effect.Log[IO]
-  ): Resource[IO, Server[IO]] =
+  ): Resource[IO, Server] =
     for {
-      uri     <- Resource.liftF(RedisURI.make[IO](redisUrl))
-      client  <- RedisClient[IO](uri)
-      redis   <- Redis[IO, URL, Array[Byte]](client, codec, uri)
+      uri     <- Resource.eval(RedisURI.make[IO](redisUrl).flatTap(uri => IO(uri.underlying.setVerifyPeer(false))))
+      _       <- Resource.eval(IO(uri.underlying.setVerifyPeer(false)))
+      client  <- RedisClient[IO].fromUri(uri)
+      redis   <- Redis[IO].fromClient[URL, Array[Byte]](client, codec)
       server  <- BlazeServerBuilder[IO]
         .bindHttp(port, "0.0.0.0") // important to use 0.0.0.0 for Heroku
         .withHttpApp(service(redis))

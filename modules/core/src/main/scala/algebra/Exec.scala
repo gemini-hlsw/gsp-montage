@@ -7,7 +7,7 @@ import cats.effect._
 import cats.implicits._
 import scala.collection.mutable.ListBuffer
 import scala.sys.process._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 
 /** Agebra for running an external program. */
 trait Exec[F[_]] {

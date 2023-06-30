@@ -33,13 +33,13 @@ object MontageR {
       def mArchiveList(survey: String, band: String, objOrLoc: String, width: Double, height: Double) =
         for {
           file <- temp.tempFile("mosaic-", ".tbl")
-          _    <- Resource.liftF(montage.mArchiveList(survey, band, objOrLoc, width, height, file))
+          _    <- Resource.eval(montage.mArchiveList(survey, band, objOrLoc, width, height, file))
         } yield file
 
       def mHdr(objOrLoc: String, radius: Double) =
         for {
           hdr <- temp.tempFile("mosaic-", ".hdr")
-          _   <- Resource.liftF(montage.mHdr(objOrLoc, radius, hdr))
+          _   <- Resource.eval(montage.mHdr(objOrLoc, radius, hdr))
         } yield hdr
 
       def mExec(hdr: Path, raw: Path) =
@@ -47,7 +47,7 @@ object MontageR {
           wd   <- temp.tempDir("mosaic-work") // a temporary directory that will be cleaned up
           out  =  wd.resolve("mosaic.fits")   // our mosaic'd output
           temp =  wd.resolve("temp")          // a temp directory for Montage to work in
-          _    <- Resource.liftF(montage.mExec(out, hdr, raw, temp))
+          _    <- Resource.eval(montage.mExec(out, hdr, raw, temp))
         } yield out
 
     }

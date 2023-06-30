@@ -8,7 +8,7 @@ lazy val http4sVersion        = "1.0.0-M38"
 lazy val redis4catsVersion    = "1.4.3"
 
 inThisBuild(Seq(
-  scalaVersion       := "2.13.11",
+  scalaVersion       := "3.3.0",
   crossScalaVersions := Seq(scalaVersion.value),
 ))
 
@@ -39,7 +39,7 @@ lazy val core = project
   .settings(
     // Docker / packageName := "web",
     dockerRepository := Some("registry.heroku.com"),
-    dockerUsername   := Some("gemini-2mass-mosaic"),
+    dockerUsername   := Some("gsp-montage"), // n.b. must match Heroku app name
     Docker / name    := "web",
     dockerAlias      := DockerAlias(
       dockerRepository.value,
@@ -53,18 +53,21 @@ lazy val core = project
 
       # Install the things we need
       RUN apt-get update
-      RUN apt-get install --yes build-essential git libfontconfig openjdk-8-jre
+      RUN apt-get install --yes build-essential git libfontconfig openjdk-17-jre
 
-      # Build Montage from master … feelin' lucky.
+      # Checkout Montage
       RUN git clone https://github.com/Caltech-IPAC/Montage.git
       WORKDIR /Montage
+      # Reset to known working version .. at some point it started segfaulting
+      RUN git reset --hard 029144bdcf7ab90c05b230d4efd400c1faa09e15
       RUN make
       WORKDIR /
       ENV PATH="${PATH}:/Montage/bin"
 
       # Set up the Scala app
       WORKDIR /opt/docker
-      ADD --chown=daemon:daemon opt /opt
+      ADD --chown=daemon:daemon 2/opt /opt
+      ADD --chown=daemon:daemon 4/opt /opt
       USER daemon
       CMD /opt/docker/bin/mosaic-server-core -J-Xmx256m
 

@@ -9,7 +9,7 @@ import cats.effect._
 import java.net.URL
 import java.nio.file._
 import java.nio.file.StandardCopyOption._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import dev.profunktor.redis4cats.algebra.StringCommands
 import java.io.InputStream
 import java.io.IOException

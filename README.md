@@ -22,7 +22,7 @@ First you need to check out and build [Caltech-IPAC/Montage](https://github.com/
 You also need a local Redis instance, which you can start up thus:
 
 ```
-docker run -p 6379:6379 redis:5.0.0
+docker run -p 6379:6379 redis:7.0.10
 ```
 
 And then `sbt core/run` or `bloop run core`. An example invocation is:
@@ -40,7 +40,7 @@ To release a new version to Heroku do:
 ```
 heroku container:login
 sbt core/docker:publish
-heroku container:release web
+heroku container:release web -a gsp-montage
 ```
 
 An example invocation is:

@@ -54,7 +54,7 @@ object Temp {
 
       def tempDir(prefix: String) =
         Resource.make(Sync[F].delay(Files.createTempDirectory(prefix))) { f =>
-          Sync[F].delay(if (f.toFile.exists) Files.walkFileTree(f, DeletionVisitor)).void
+          Sync[F].delay(if (f.toFile.exists) Files.walkFileTree(f, DeletionVisitor) else null).void
         }
 
       def tempFile(prefix: String, suffix: String) =
