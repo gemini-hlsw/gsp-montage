@@ -1,6 +1,0 @@
-# This tells Heroku how to build (and run) our docker image.
-# Note that we also added SBT_PRE_TASKS=docker:stage to the app config.
-# See https://devcenter.heroku.com/articles/build-docker-images-heroku-yml
-build:
-  docker:
-    web: Dockerfile

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package mosaic.algebra
@@ -9,7 +9,7 @@ import cats.effect._
 import java.net.URL
 import java.nio.file._
 import java.nio.file.StandardCopyOption._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import dev.profunktor.redis4cats.algebra.StringCommands
 import java.io.InputStream
 import java.io.IOException
@@ -32,11 +32,10 @@ trait Fetch[F[_]] {
 
 object Fetch {
 
-  def apply[F[_]: Sync: Parallel: ContextShift](
-    log:     Logger[F],
-    temp:    Temp[F],
-    redis:   StringCommands[F, URL, Array[Byte]],
-    blocker: Blocker
+  def apply[F[_]: Sync: Parallel](
+    log:   Logger[F],
+    temp:  Temp[F],
+    redis: StringCommands[F, URL, Array[Byte]],
   ): Fetch[F] =
     new Fetch[F] {
 
@@ -81,9 +80,9 @@ object Fetch {
           case None =>
             for {
               _   <- log.info(s"Cache miss on $url")
-              is  <- blocker.blockOn(openStream(url, MaxRedirects))
-              _   <- blocker.blockOn(Sync[F].delay(Files.copy(is, file, REPLACE_EXISTING)))
-              bs  <- blocker.blockOn(Sync[F].delay(Files.readAllBytes(file)))
+              is  <- openStream(url, MaxRedirects)
+              _   <- Sync[F].delay(Files.copy(is, file, REPLACE_EXISTING))
+              bs  <- Sync[F].delay(Files.readAllBytes(file))
               _   <- redis.set(url, bs)
             } yield ()
 

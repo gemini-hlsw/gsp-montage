@@ -1,43 +1,58 @@
-# gsp-montage
+## mosaic-server
 
-This is a server application that addresses the issue where 2MASS tiles overlap the TPE FOV in a non-helpful way, as described in Gemini issue `REL-1093`. Internally it uses [Caltech-IPAC/Montage](https://github.com/Caltech-IPAC/Montage) to fetch tiles and produce composite images. The Gemini Observing Tool uses this service.
+This is a partial fix for the issue where 2MASS tiles overlap the FOV in a non-helpful way, as described in Gemini issue `REL-1093`.
 
-This application runs in a Docker container that includes both the Montage binaries and the Scala server. The `Dockerfile` in the root of this project builds the Docker image. See below for information on building and running locally.
+It should work for you if you patch your OT's `ImageCatalog.scala` thus:
 
-This application is deployed on Heroku under the name `gsp-montage`. Gemini HLSW members can examine the application [here](https://dashboard.heroku.com/apps/gsp-montage). Deployment is **automatic**: all pushes to `master` will cause a new version to be deployed to production. You can look at the "Activity" tab in Heroku to see this.
+```patch
+@@ -88,7 +88,8 @@ abstract class AstroCatalog(id: CatalogId, displayName: String, shortName: Strin
+   def adjacentOverlap: Angle = Angle.zero
 
-You can try out the production app by swapping `gsp-montage.herokuapp.com` for `localhost:8080` in the `curl` example below.
+   override def queryUrl(c: Coordinates, site: Option[Site]): NonEmptyList[URL] =
+-    NonEmptyList(new URL(s" http://irsa.ipac.caltech.edu/cgi-bin/Oasis/2MASSImg/nph-2massimg?objstr=${c.ra.toAngle.formatHMS}%20${c.dec.formatDMS}&size=${size.toArcsecs.toInt}&band=${band.name}"))
++  //  NonEmptyList(new URL(s" http://irsa.ipac.caltech.edu/cgi-bin/Oasis/2MASSImg/nph-2massimg?objstr=${c.ra.toAngle.formatHMS}%20${c.dec.formatDMS}&size=${size.toArcsecs.toInt}&band=${band.name}"))
++    NonEmptyList(new URL(s" http://gemini-2mass-mosaic.herokuapp.com/v1/mosaic?object=${c.ra.toAngle.formatHMS}%20${c.dec.formatDMS}&radius=${0.25}&band=${band.name}"))
+ }
+```
 
-## Local Development
+### Running Locally
 
-For local development it's easiest to set up your machine with the services that the Scala program needs. If you just want to run it then skip down to **Running on Docker** below.
+First you need to check out and build [Caltech-IPAC/Montage](https://github.com/Caltech-IPAC/Montage) and make sure it's on your path. You can test this by typing `mHdr` with no args and you should get an error message back.
 
+You also need a local Redis instance, which you can start up thus:
 
-- Install [Docker](https://hub.docker.com/editions/community/docker-ce-desktop-mac) if you don't have it already.
-- Check out and build [Caltech-IPAC/Montage](https://github.com/Caltech-IPAC/Montage) and make sure the binaries are avaliable on your path.
-- Run a local [Redis](https://redis.io) instance: `docker run -p 6379:6379 redis:5.0.0`
+```
+docker run -p 6379:6379 redis:7.0.10
+```
 
-Once that stuff is done you can work on it like any other Scala application. If you run the application with `sbt run` or `bloop core run` you can then hit it with `curl` and fetch an image. Here is an example invocation.
+And then `sbt core/run` or `bloop run core`. An example invocation is:
 
 ```
 curl -o /tmp/foo.fits 'http://localhost:8080/v1/mosaic?object=05:51:10.305%2008:10:21.43&radius=0.25&band=H'
 ```
 
-You can now open `/tmp/foo.fits` in your favorite FITS viewer, if you have one. They all seem to be horrible. You can use the "Open…" menu in the OT's TPE if you want to.
+### Running on Heroku
 
-## Running on Docker
+This only works for Rob. Anyone else needs to be [added as a collaborator](https://devcenter.heroku.com/articles/collaborating#add-collaborators).
 
-If you just want to run this thing locally you can do it by building the same docker image that Heroku builds.
+To release a new version to Heroku do:
 
-- Install [Docker](https://hub.docker.com/editions/community/docker-ce-desktop-mac) if you don't have it already.
-- Run a local [Redis](https://redis.io) instance: `docker run -p 6379:6379 redis:5.0.0`
+```
+heroku container:login
+sbt core/docker:publish
+heroku container:release web -a gsp-montage
+```
 
-You can now build the gsp-montage image (it will be slow the first time).
+An example invocation is:
 
-    docker build -t gsp-montage
+```
+curl -o /tmp/foo.fits 'http://gemini-2mass-mosaic.herokuapp.com/v1/mosaic?object=05:51:10.305%2008:10:21.43&radius=0.25&band=H'
+```
 
-And run a container using the image you just made.
 
-    docker run -t -i -p 8080:8080 -e PORT=8080 -e REDIS_URL=redis://host.docker.internal gsp-montage
+### Next Steps
 
-The same `curl` command above in **Local Development** should now work.
+Next steps:
+
+- Move cache to S3 … the dyno will run out of disk quickly
+- I'm using fs2/cats-effect milestones in order to get `Bracket` and `Resource`. http4s isn't quite ready yet so I'm using Jetty for now on the front end.

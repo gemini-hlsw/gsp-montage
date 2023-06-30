@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package mosaic.algebra
@@ -8,7 +8,7 @@ import cats.implicits._
 import java.net.URL
 import java.nio.file._
 import mosaic.data.Table
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 
 /** Algebra for creating mosaic images. */
 trait Mosaic[F[_]] {
@@ -35,9 +35,9 @@ object Mosaic {
       // assemble a mosaic.
       def mosaic(objOrLoc: String, radius: Double, band: Char): Resource[F, Path] =
         for {
-          _    <- Resource.liftF(log.info(s"""mosaic("$objOrLoc", $radius, '$band')"""))
+          _    <- Resource.eval(log.info(s"""mosaic("$objOrLoc", $radius, '$band')"""))
           tbl  <- montage.mArchiveList("2MASS", band.toString, objOrLoc, radius, radius)
-          t2   <- Resource.liftF(Table.read(tbl))
+          t2   <- Resource.eval(Table.read(tbl))
           dir  <- fetchTiles(t2)
           hdr  <- montage.mHdr(objOrLoc, radius)
           fits <- montage.mExec(hdr, dir)
@@ -47,7 +47,7 @@ object Mosaic {
       // will contain nothing else and will be removed after use.
       def fetchTiles(t: Table): Resource[F, Path] =
         t.get("URL") match {
-          case None => Resource.liftF(Sync[F].raiseError[Path](new Exception("Table has no URL column.")))
+          case None => Resource.eval(Sync[F].raiseError[Path](new Exception("Table has no URL column.")))
           case Some(ss) => fetch.fetchMany(ss.map(new URL(_)))
         }
 

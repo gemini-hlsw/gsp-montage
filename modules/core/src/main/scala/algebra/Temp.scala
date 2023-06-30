@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package mosaic.algebra
@@ -54,7 +54,7 @@ object Temp {
 
       def tempDir(prefix: String) =
         Resource.make(Sync[F].delay(Files.createTempDirectory(prefix))) { f =>
-          Sync[F].delay(if (f.toFile.exists) Files.walkFileTree(f, DeletionVisitor)).void
+          Sync[F].delay(if (f.toFile.exists) Files.walkFileTree(f, DeletionVisitor) else null).void
         }
 
       def tempFile(prefix: String, suffix: String) =

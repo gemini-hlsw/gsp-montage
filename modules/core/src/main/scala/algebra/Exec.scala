@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package mosaic.algebra
@@ -7,7 +7,7 @@ import cats.effect._
 import cats.implicits._
 import scala.collection.mutable.ListBuffer
 import scala.sys.process._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 
 /** Agebra for running an external program. */
 trait Exec[F[_]] {
@@ -23,18 +23,16 @@ trait Exec[F[_]] {
 object Exec {
 
   /** Constuct a `Exec` for conforming `F`, given a `log` for messages. */
-  def apply[F[_]: Sync: ContextShift](log: Logger[F], blocker: Blocker): Exec[F] =
+  def apply[F[_]: Sync](log: Logger[F]): Exec[F] =
     new Exec[F] {
 
       def run(cmd: String, args: String*): F[String] =
-        blocker.blockOn {
-          for {
-            _ <- log.info(s"$cmd ${args.mkString(" ")}")
-            s <- Sync[F].delay(unsafeExec(cmd, args: _*))
-            _ <- log.info(s._2)
-            _ <- fail(s._1, s._2).whenA(s._1 != 0)
-          } yield s._2
-        }
+        for {
+          _ <- log.info(s"$cmd ${args.mkString(" ")}")
+          s <- Sync[F].delay(unsafeExec(cmd, args: _*))
+          _ <- log.info(s._2)
+          _ <- fail(s._1, s._2).whenA(s._1 != 0)
+        } yield s._2
 
       // Fail with an error message.
       def fail[A](exitCode: Int, message: String): F[A] =
@@ -46,7 +44,7 @@ object Exec {
       // Side-effecting execution returning exit code and output.
       private def unsafeExec(cmd: String, args: String*): (Int, String) = {
         val buf = ListBuffer[String]()
-        val exitCode = (cmd +: args).cat.run(ProcessLogger(buf.append(_))).exitValue
+        val exitCode = (cmd +: args).cat.run(ProcessLogger(buf.append(_))).exitValue()
         (exitCode, buf.mkString("\n"))
       }
 

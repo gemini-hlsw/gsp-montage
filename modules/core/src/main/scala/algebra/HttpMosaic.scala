@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package mosaic.algebra
@@ -6,7 +6,7 @@ package mosaic.algebra
 import cats.effect._
 import cats.implicits._
 import java.nio.file._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import fs2.Stream
 import dev.profunktor.redis4cats.algebra.StringCommands
 import java.net.URL
@@ -34,14 +34,14 @@ object HttpMosaic {
         Stream.eval(redis.get(url)) flatMap {
           case Some(arr) =>
             Stream.eval(log.info(s"Cache hit on $url")) *>
-            Stream.chunk(Chunk.bytes(arr))
+            Stream.chunk(Chunk.array(arr))
           case None      =>
             for {
               _    <- Stream.eval(log.info(s"Cache miss on $url"))
               path <- Stream.resource(mosaic.mosaic(objOrLoc, radius, band))
               arr  <- Stream.eval(Sync[F].delay(Files.readAllBytes(path)))
               _    <- Stream.eval(redis.set(url, arr))
-              b    <- Stream.chunk(Chunk.bytes(arr))
+              b    <- Stream.chunk(Chunk.array(arr))
             } yield b
           }
         }
