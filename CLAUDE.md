@@ -48,7 +48,7 @@ The image is defined entirely by `dockerCommands` in `build.sbt` (sbt-native-pac
 - `libnsl-dev`
 - a `/usr/local/bin/gcc` wrapper adding `-fcommon` (GCC 10+ rejects Montage's duplicate globals; overriding `CC` on the `make` line breaks the include paths baked into Montage's Makefiles)
 
-`dockerBuildOptions` forces `linux/amd64` to match Heroku. Montage's bundled libraries can't configure on ARM, so don't drop it on Apple Silicon. Expect a slow build under emulation.
+`dockerBuildOptions` forces `linux/amd64` to match Heroku, and `--provenance=false` because Heroku's registry answers `unsupported` to the attestation manifests Docker Desktop adds by default. Montage's bundled libraries can't configure on ARM, so don't drop it on Apple Silicon. Expect a slow build under emulation.
 
 Deploy is manual and requires Heroku collaborator access on `gsp-montage`:
 
