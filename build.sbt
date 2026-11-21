@@ -48,6 +48,7 @@ lazy val core = project
       None
     ),
     dockerBuildOptions += "--platform=linux/amd64", // Heroku runs amd64
+    dockerBuildOptions += "--provenance=false",     // Heroku's registry rejects attestation manifests
     dockerCommands   := """
 
       FROM ubuntu:noble
