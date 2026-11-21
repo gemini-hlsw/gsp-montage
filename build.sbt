@@ -47,13 +47,17 @@ lazy val core = project
       (Docker / name).value,
       None
     ),
+    dockerBuildOptions += "--platform=linux/amd64", // Heroku runs amd64
     dockerCommands   := """
 
-      FROM ubuntu:bionic
+      FROM ubuntu:noble
 
       # Install the things we need
       RUN apt-get update
-      RUN apt-get install --yes build-essential git libfontconfig openjdk-17-jre
+      RUN apt-get install --yes build-essential git libfontconfig libnsl-dev ca-certificates openjdk-17-jre
+
+      # GCC 10+ defaults to -fno-common, which breaks Montage's shared globals
+      RUN printf '#!/bin/sh\nexec /usr/bin/gcc -fcommon "$@"\n' > /usr/local/bin/gcc && chmod +x /usr/local/bin/gcc
 
       # Checkout Montage
       RUN git clone https://github.com/Caltech-IPAC/Montage.git
@@ -73,4 +77,3 @@ lazy val core = project
 
     """.linesIterator.map(_.trim).map(Cmd(_)).toSeq
   )
-
